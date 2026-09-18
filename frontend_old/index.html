@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkIQ - Smart Parking Intelligence Platform</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="brand">
+            <i class="fa-solid fa-square-parking brand-icon"></i>
+            <span>ParkIQ</span>
+        </div>
+
+        <div class="role-switcher">
+            <button class="role-btn active" id="btn-role-driver" onclick="switchRole('driver')">
+                <i class="fa-solid fa-car"></i> Driver Portal
+            </button>
+            <button class="role-btn" id="btn-role-staff" onclick="switchRole('staff')">
+                <i class="fa-solid fa-qrcode"></i> Staff Scanner
+            </button>
+            <button class="role-btn" id="btn-role-admin" onclick="switchRole('admin')">
+                <i class="fa-solid fa-chart-line"></i> Manager Analytics
+            </button>
+        </div>
+
+        <div class="user-status">
+            <span class="badge-role" id="current-role-badge">Driver View</span>
+            <button class="btn-primary" onclick="seedDemoData()"><i class="fa-solid fa-arrows-rotate"></i> Refresh Data</button>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- ==================== DRIVER PORTAL VIEW ==================== -->
+        <section id="view-driver" class="view-panel active">
+            <div class="grid-metrics">
+                <div class="card">
+                    <div class="card-title">Registered Vehicle</div>
+                    <div class="card-value" id="driver-vehicle-plate">KA-01-EQ-9988</div>
+                    <div class="card-subtext">AES-256 Protected QR Identity</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Active Session Status</div>
+                    <div class="card-value" id="driver-session-status" style="color: var(--status-vacant);">Active Parking</div>
+                    <div class="card-subtext" id="driver-session-sub">Slot: F1-A01 | Est Exit: 75m</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Estimated Fare</div>
+                    <div class="card-value" id="driver-fare">$6.50</div>
+                    <div class="card-subtext">Hourly Rate: $6.50/hr</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <!-- AES-256 QR Wallet Card -->
+                <div class="qr-wallet-card">
+                    <h3><i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan);"></i> Digital QR Wallet</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.4rem;">
+                        Scan at garage gate. Contains ZERO personal details.
+                    </p>
+
+                    <div class="qr-box">
+                        <canvas id="qr-canvas"></canvas>
+                    </div>
+
+                    <div style="font-size: 0.85rem; font-weight: 600; color: #fff;" id="qr-label-plate">Vehicle: KA-01-EQ-9988</div>
+                    <div class="qr-token-preview" id="qr-token-text">Encrypted Token Payload Loading...</div>
+
+                    <button class="btn-primary" style="margin-top: 1.2rem; width: 100%;" onclick="openPublicScanModal()">
+                        <i class="fa-solid fa-eye"></i> Test Public Privacy Scan
+                    </button>
+                </div>
+
+                <!-- Find Parking & Check-In Panel -->
+                <div class="card">
+                    <h3 class="section-title"><i class="fa-solid fa-location-dot" style="color: var(--accent-cyan);"></i> Nearby Parking Facility</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1.2rem;" id="lot-name-display">Grand Central Multi-Level Garage</p>
+
+                    <div class="form-group">
+                        <label>Select Parking Slot for Check-In</label>
+                        <select id="slot-select" class="form-control">
+                            <option value="">Loading available slots...</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <button class="btn-primary" style="flex: 1;" onclick="handleDriverCheckIn()">
+                            <i class="fa-solid fa-right-to-bracket"></i> Check-In with QR
+                        </button>
+                        <button class="btn-primary" style="flex: 1; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff;" onclick="handleDriverCheckOut()">
+                            <i class="fa-solid fa-right-from-bracket"></i> Check-Out & Pay
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 2rem; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--accent-cyan);"><i class="fa-solid fa-brain"></i> AI Smart Slot Recommendation</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);" id="ai-recommend-text">Loading AI slot optimization recommendations...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PARKING STAFF SCANNER VIEW ==================== -->
+        <section id="view-staff" class="view-panel">
+            <div class="card" style="max-width: 600px; margin: 0 auto;">
+                <h3 class="section-title"><i class="fa-solid fa-qrcode" style="color: var(--accent-cyan);"></i> Staff Gate QR Scanner</h3>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Scan driver QR digital identity token to verify authorization and decrypt vehicle record.</p>
+
+                <div class="form-group">
+                    <label>AES-256 Encrypted Token String</label>
+                    <textarea id="staff-qr-input" class="form-control" rows="3" placeholder="Paste or scan QR token payload string..."></textarea>
+                </div>
+
+                <button class="btn-primary" style="width: 100%; padding: 0.8rem;" onclick="verifyStaffQR()">
+                    <i class="fa-solid fa-lock-open"></i> Decrypt & Validate Identity
+                </button>
+
+                <div id="staff-scan-result" style="margin-top: 1.5rem; display: none; background: rgba(0, 0, 0, 0.5); padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--accent-cyan);">
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 0.8rem;"><i class="fa-solid fa-circle-check"></i> Identity Decrypted Successfully</h4>
+                    <div id="staff-result-details" style="font-size: 0.9rem; line-height: 1.6;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== MANAGER ANALYTICS DASHBOARD VIEW ==================== -->
+        <section id="view-admin" class="view-panel">
+            <div class="grid-metrics">
+                <div class="card">
+                    <div class="card-title">Live Occupancy Rate</div>
+                    <div class="card-value" id="admin-occupancy-rate">25.0%</div>
+                    <div class="card-subtext" id="admin-occupancy-sub">5 / 20 Slots Occupied</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Total Revenue</div>
+                    <div class="card-value" id="admin-revenue" style="color: var(--status-vacant);">$128.50</div>
+                    <div class="card-subtext">Hourly Rate: $6.50</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">Active Parking Sessions</div>
+                    <div class="card-value" id="admin-active-sessions">1</div>
+                    <div class="card-subtext">Live WebSocket Monitoring</div>
+                </div>
+                <div class="card">
+                    <div class="card-title">QR Fraud Alerts</div>
+                    <div class="card-value" id="admin-fraud-alerts" style="color: #ef4444;">0</div>
+                    <div class="card-subtext">Anomaly Detection Engine Active</div>
+                </div>
+            </div>
+
+            <!-- Live Occupancy Grid Map -->
+            <div class="occupancy-section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <i class="fa-solid fa-grid-2" style="color: var(--accent-cyan);"></i> Live Facility Occupancy Grid
+                    </div>
+                    <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+                        <span style="color: var(--status-vacant);"><i class="fa-solid fa-circle"></i> Vacant</span>
+                        <span style="color: var(--status-occupied);"><i class="fa-solid fa-circle"></i> Occupied</span>
+                        <span style="color: var(--status-reserved);"><i class="fa-solid fa-circle"></i> Reserved</span>
+                        <span style="color: var(--status-ev);"><i class="fa-solid fa-bolt"></i> EV Charger</span>
+                    </div>
+                </div>
+
+                <div class="slots-grid" id="admin-slots-grid">
+                    <!-- Slots rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- AI Forecasting & Fraud Log Grid -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div class="card">
+                    <h3 class="section-title"><i class="fa-solid fa-chart-line" style="color: var(--accent-cyan);"></i> AI Occupancy Forecast (Next 1-5 Hours)</h3>
+                    <div id="ai-forecast-content" style="margin-top: 1rem; font-size: 0.9rem; line-height: 1.8;">
+                        Loading AI forecasting predictive metrics...
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="section-title"><i class="fa-solid fa-shield-triangle-exclamation" style="color: #ef4444;"></i> QR Fraud & Anomaly Audit Log</h3>
+                    <div id="fraud-log-content" style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                        No fraud or duplicate QR scan anomalies detected.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating RAG AI Assistant Chatbot -->
+    <div class="rag-chat-widget">
+        <button class="chat-toggle-btn" onclick="toggleChatWindow()" title="Ask ParkIQ AI Assistant">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+
+        <div class="chat-window" id="chat-window">
+            <div class="chat-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #fff;">
+                    <i class="fa-solid fa-sparkles" style="color: var(--accent-cyan);"></i> Ask ParkIQ AI
+                </div>
+                <button style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;" onclick="toggleChatWindow()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="chat-body" id="chat-body">
+                <div class="chat-msg bot">
+                    Hello! I am your ParkIQ AI Assistant. Ask me about parking rules, EV charging rates, reservation policies, maps, or emergency assistance.
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
+                <button class="btn-primary" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>

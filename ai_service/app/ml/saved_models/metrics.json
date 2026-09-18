@@ -1,0 +1,19 @@
+{
+    "departure_prediction": {
+        "MAE": 22.046276924992817,
+        "RMSE": 29.10551220307455,
+        "R2": 0.896076745393385
+    },
+    "occupancy_prediction": {
+        "MAE": 3.296058310048351,
+        "RMSE": 4.396057917918703,
+        "R2": 0.9738362308436176
+    },
+    "fraud_classification": {
+        "accuracy": 1.0,
+        "macro_f1": 1.0,
+        "weighted_f1": 1.0,
+        "fraud_precision": 1.0,
+        "fraud_recall": 1.0
+    }
+}

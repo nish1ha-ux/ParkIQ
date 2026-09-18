@@ -1,0 +1,88 @@
+
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: parkiq_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-parkiq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-parkiq_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-parkiq_db}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-parkiq}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: parkiq_redis
+    restart: always
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: parkiq_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-parkiq}:${POSTGRES_PASSWORD:-parkiq_pass}@postgres:5432/${POSTGRES_DB:-parkiq_db}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - SECRET_KEY=${SECRET_KEY:-parkiq_super_secret_jwt_key_2026_enterprise_987654321}
+      - AES_QR_SECRET_KEY=${AES_QR_SECRET_KEY:-0123456789abcdef0123456789abcdef}
+      - AI_SERVICE_URL=http://ai_service:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+
+  ai_service:
+    build: ./ai_service
+    container_name: parkiq_ai_service
+    restart: always
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-parkiq}:${POSTGRES_PASSWORD:-parkiq_pass}@postgres:5432/${POSTGRES_DB:-parkiq_db}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontend:
+    build: ./frontend
+    container_name: parkiq_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
