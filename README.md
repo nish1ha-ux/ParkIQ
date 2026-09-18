@@ -1,161 +1,131 @@
-# ParkIQ: Enterprise Smart Parking Intelligence Platform
+# 🚗 ParkIQ — AI-Powered Smart Parking Intelligence Platform
 
-ParkIQ is a state-of-the-art, AI-powered ticketless smart parking platform featuring real-time visual telemetry, LangChain-based RAG documentation assistance, automated Firebase push alerts, and predictive analytics.
+ParkIQ is an AI-powered smart parking management platform designed to make parking more intelligent, secure, and convenient for both vehicle owners and parking administrators.
 
----
-
-## 1. Architectural Overview
-
-```
-                        +----------------------------+
-                        |  Nginx Container (Port 80) |
-                        |     React Frontend (Vite)  |
-                        +--------------+-------------+
-                                       | (HTTP / WebSocket)
-                                       v
-                        +----------------------------+
-                        | FastAPI Container (8000)  |
-                        |      Platform Backend      |
-                        +----+-------------+----+----+
-                             |             |    |
-            (Local Fallback) |   (HTTP)    |    | (SQLAlchemy)
-                             |             |    |
-                             v             |    v
-                   +--------------+        |  +--------------+
-                   | Chroma DB    |        |  | PostgreSQL   |
-                   | Vector Store |        |  | (Port 5432)  |
-                   +--------------+        |  +--------------+
-                                           v
-                        +----------------------------+
-                        | FastAPI Container (8001)  |
-                        |    AI Prediction Engine    |
-                        +----------------------------+
-```
-
-ParkIQ is composed of four main microservice blocks:
-1. **React Frontend (Nginx)**: Visual dashboard styled with Tailwind CSS, drawing telemetry and charts via Recharts.
-2. **FastAPI Backend (Uvicorn)**: Relational model coordinator handling gate scanning, active session tracking, and WebSockets. Includes a LangChain RAG vector index using Chroma.
-3. **AI Microservice**: Gradient Boosting and Isolation Forest inference engine for occupancy forecasting and QR fraud checks.
-4. **PostgreSQL & Redis**: Database records and telemetry cache.
+The platform combines real-time parking management, secure vehicle QR identification, AI-based predictions, RAG-powered assistance, analytics, and automated notifications into one system.
 
 ---
 
-## 2. Local Desktop Run Instructions
+## ✨ Key Features
 
-### Prerequisites
-- Python 3.11+
-- Node.js 20+
-- PostgreSQL server
+### 👤 Driver Features
+- Secure user authentication with JWT
+- Vehicle registration and management
+- Physical vehicle QR code
+- Real-time parking session tracking
+- Parking countdown timer
+- Checkout and payment workflow
+- AI-powered estimated departure prediction
+- Parking notifications
+- AI/RAG parking assistant
+- Privacy-safe public QR status
 
-### Step 1: Start Backend API
-```bash
-cd backend
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-$env:DATABASE_URL="postgresql+psycopg2://parkiq:parkiq_pass@localhost:5432/parkiq_db"
-uvicorn app.main:app --reload
-```
+### 🏢 Admin Features
+- Parking occupancy dashboard
+- Live parking telemetry
+- Occupancy forecasting
+- Peak congestion prediction
+- Revenue analytics
+- Parking session monitoring
+- Fraud detection
+- AI-powered parking insights
 
-### Step 2: Start AI Service
-```bash
-cd ai_service
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --port 8001 --reload
-```
+### 🤖 AI Features
+- Departure time prediction
+- Parking occupancy prediction
+- Intelligent slot recommendation
+- Congestion prediction
+- Fraud detection
+- RAG-powered parking assistant
+- Grounded responses using parking knowledge documents
 
-### Step 3: Start Frontend SPA
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Navigate to `http://localhost:5173`. Use preset login credentials (e.g. `driver@parkiq.com` / `driver123`) to authenticate.
-
----
-
-## 3. Docker Compose Local Execution
-
-To run the entire ParkIQ ecosystem in a single container network locally:
-
-```bash
-# Build and boot all containers (Postgres, Redis, Backend, AI Service, and Frontend)
-docker compose up --build -d
-
-# Verify all services are online
-docker compose ps
-```
-
-The services will be exposed at:
-- **Frontend SPA Portal**: `http://localhost:80`
-- **Backend API Gateway**: `http://localhost:8000/docs`
-- **AI Inference microservice**: `http://localhost:8001`
+### 🔐 Security
+- JWT authentication
+- Role-based access control
+- AES-256-GCM protected QR references
+- Tamper protection
+- QR replay protection
+- Privacy-safe public QR information
+- Rate limiting and protected AI endpoints
+- Environment-based secrets
+- Production configuration validation
 
 ---
 
-## 4. Production AWS Deployment Guide
+## 🏗️ System Architecture
 
-We prepare AWS production deployment using **Terraform** for resource provisioning, **AWS ECR** for image management, and **EC2/RDS/S3** for runtime hosting.
+```text
+                    ┌─────────────────────┐
+                    │   React Frontend    │
+                    │ TypeScript +        │
+                    │ Tailwind CSS        │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   FastAPI Backend   │
+                    │ Authentication      │
+                    │ Parking Management  │
+                    │ QR & Sessions       │
+                    └──────┬───────┬──────┘
+                           │       │
+                 ┌─────────┘       └─────────┐
+                 ▼                           ▼
+        ┌─────────────────┐        ┌─────────────────┐
+        │   PostgreSQL    │        │      Redis      │
+        │   / SQLite      │        │ Cache & State   │
+        └─────────────────┘        └─────────────────┘
+                           │
+                           ▼
+                  ┌──────────────────┐
+                  │   AI Service     │
+                  │ Python + FastAPI │
+                  └────────┬─────────┘
+                           │
+                           ▼
+                  ┌──────────────────┐
+                  │ AI / RAG Layer   │
+                  │ Gemini +          │
+                  │ LangChain +       │
+                  │ ChromaDB          │
+                  └──────────────────┘
 
-### Step 1: Provision Cloud Resources
-Initialize and run Terraform from the `/aws_deployment` folder:
+## 🛠️ Tech Stack
 
-```bash
-cd aws_deployment
+### Frontend
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
 
-# Initialize AWS provider plugin
-terraform init
+### Backend
+- Python
+- FastAPI
+- SQLAlchemy
+- JWT Authentication
+- WebSockets
 
-# Generate deployment execution blueprint
-terraform plan -out=tfplan.binary
+### AI / ML
+- Python
+- Scikit-learn
+- Google Gemini
+- LangChain
+- ChromaDB
 
-# Provision EC2, RDS PostgreSQL, and S3 Bucket
-terraform apply tfplan.binary
-```
+### Database & Infrastructure
+- SQLite
+- Redis
+- Docker
+- Docker Compose
 
-*Note: Save the outputs displaying the EC2 host IP, RDS Postgres database endpoint hostname, and S3 bucket details.*
+### Planned Production Infrastructure
+- PostgreSQL / Amazon RDS
+- AWS EC2
+- Amazon S3
+- Amazon ElastiCache
+- CloudFront
+- CloudWatch
 
-### Step 2: Build & Push Images to ECR
-Authenticate with AWS ECR and push your Docker containers:
-
-```bash
-# Login to AWS ECR registry
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com
-
-# Build and tag containers
-docker build -t parkiq-backend ./backend
-docker tag parkiq-backend:latest <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/parkiq-backend:latest
-
-docker build -t parkiq-ai-service ./ai_service
-docker tag parkiq-ai-service:latest <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/parkiq-ai-service:latest
-
-docker build -t parkiq-frontend ./frontend
-docker tag parkiq-frontend:latest <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/parkiq-frontend:latest
-
-# Push to Amazon registry
-docker push <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/parkiq-backend:latest
-docker push <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/parkiq-ai-service:latest
-docker push <YOUR_AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/parkiq-frontend:latest
-```
-
-### Step 3: Run Application on EC2
-SSH into the EC2 host, download the `docker-compose.yml` file, configure the production parameters (pointing to RDS Postgres instead of local Postgres), and launch the app:
-
-```bash
-# SSH into EC2 Server
-ssh -i "your-key.pem" ubuntu@<EC2_PUBLIC_IP>
-
-# Create deployment folder and pull compose config
-mkdir deployment && cd deployment
-curl -o docker-compose.yml https://raw.githubusercontent.com/your-repo/parkiq/main/docker-compose.yml
-
-# Edit the compose file environment variables:
-# - DATABASE_URL = postgresql+psycopg2://parkiq_admin:<RDS_PASSWORD>@<RDS_ENDPOINT>:5432/parkiq_prod
-# - Replace image builds with ECR images.
-
-# Boot application
-docker compose up -d
-```
-Your enterprise platform is now fully deployed and secure!
+### Planned Integrations
+- Razorpay
+- Google Maps API
